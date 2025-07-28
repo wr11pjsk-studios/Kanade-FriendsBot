@@ -1,94 +1,79 @@
 import discord
-from discord import app_commands
 import datetime
-from discord.ext import commands
 
 intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot("%", intents=intents)
+intents.message_content = True  # Only needed if you want to read normal messages
 
-@bot.event
-async def on_ready():
-    print("the bot is running lmaoooaooo")
-    try:
-        synced = await bot.tree.sync()
-        print(f"i synced about {len(synced)} slash commands bro")
-    except Exception as e:
-       print(e) 
+bot = discord.Bot(intents=intents)
 
-@bot.tree.command(name="hi")
-async def hi(interaction: discord.Interaction):
-    await interaction.response.send_message(f"{interaction.user.mention} is a FEMBOY (stupid ahh slash commands)", ephemeral=False)
+# ========== EMBEDDING COMMANDS ==========
 
-@bot.tree.command(name="embed create", category="Embedding")
-async def create_embed(interaction: discord.Interaction, title: str, text: str):
+@bot.slash_command(name="create_embed", description="Creates an embed with a title and text.")
+async def create_embed(ctx: discord.ApplicationContext, title: str, text: str):
     embed = discord.Embed(description=text)
     embed.set_author(name=title)
-    await interaction.response.send_message(embed=embed)
+    await ctx.respond(embed=embed)
 
-@bot.tree.command(name="embed create url", category="Embedding")
-async def create_embed_url(interaction: discord.Interaction, title: str, text: str, link: str):
+@bot.slash_command(name="create_embed_url", description="Creates an embed with a title, text, and an image URL.")
+async def create_embed_url(ctx: discord.ApplicationContext, title: str, text: str, link: str):
     embed = discord.Embed(description=text)
     embed.set_author(name=title)
     embed.set_image(url=link)
-    await interaction.response.send_message(embed=embed)
+    await ctx.respond(embed=embed)
 
-@bot.tree.command(name="mute", category="Moderation")
-async def shush(interaction: discord.Interaction, member: discord.Member, until: int, reason: str):
+# ========== MODERATION COMMANDS ==========
+
+@bot.slash_command(name="shush", description="Mutes the user and makes them shut the fuck up.")
+async def shush(ctx: discord.ApplicationContext, member: discord.Member, until: int, reason: str):
     try:
         await member.timeout(datetime.timedelta(seconds=until), reason=reason)
-        await interaction.response.send_message(f"Successfully timed out user for {until} seconds.")
+        await ctx.respond(f"Successfully timed out {member.mention} for {until} seconds.")
     except Exception:
-        await interaction.response.send_message("no you dumbass, you either failed the command or they're a mod.")
+        if member.id == 787685020953083905:
+            await ctx.respond("just because you created me doesn't mean you're omnipotent when I'm on a server, dumbass")
+        else:
+            await ctx.respond(f"no {member.mention}, you either failed the command or they're a mod.")
 
-@bot.tree.command(name="ban", category="Moderation")
-async def tempban(interaction: discord.Interaction, member: discord.Member, until: int, reason: str):
+@bot.slash_command(name="tempban", description="Bans the user for a given amount of time.")
+async def tempban(ctx: discord.ApplicationContext, member: discord.Member, until: int, reason: str):
     try:
-        await member.ban()
-        await interaction.response.send_message("{member} was banned for : {reason}.")
+        await member.ban(reason=reason)
+        await ctx.respond(f"{member.mention} was banned for: {reason}.")
     except Exception:
-        await interaction.response.send_message("no.")
+        await ctx.respond("no.")
 
+# ========== FUN COMMANDS ==========
 
-@bot.tree.command(name="bonk", category="Fun")
-async def bonk(interaction: discord.Interaction, bonked_member: discord.Member):
+@bot.slash_command(name="bonk", description="Bonks the pinged user.")
+async def bonk(ctx: discord.ApplicationContext, bonked_member: discord.Member):
     try:
+        bonked_name = bonked_member.nick or bonked_member.name
+        ctx_name = ctx.author.nick or ctx.author.name
+
         bonk_embed = discord.Embed(description="akumarin is a straight guy")
-        if bonked_member.nick:
-            bonked_name = bonked_member.nick
-        else:
-            bonked_name = bonked_member.name
-
-        if interaction.user.nickname:
-            ctx_name = interaction.user.display_name
-        else:
-            ctx_name = interaction.user.name
         bonk_embed.set_author(name=f'{ctx_name} has bonked {bonked_name}')
-        image_url="https://c.tenor.com/yaEqa7kN91MAAAAd/tenor.gif"
+        image_url = "https://c.tenor.com/yaEqa7kN91MAAAAd/tenor.gif"
         bonk_embed.set_image(url=image_url)
-        await interaction.response.send_message(embed=bonk_embed)
-    except Exception:
-        await interaction.response.send_message("bro i couldn't bonk that guy, you're corny asf")
 
-@bot.tree.command(name="cook for",category="Fun")
-async def cookfor(interaction: discord.Interaction, cooked_member: discord.Member):
+        await ctx.respond(embed=bonk_embed)
+    except Exception:
+        await ctx.respond("bro i couldn't bonk that guy, you're corny asf")
+
+@bot.slash_command(name="cookfor", description="Cooks something for the pinged user.")
+async def cookfor(ctx: discord.ApplicationContext, cooked_member: discord.Member):
     try:
-        cook_embed = discord.Embed(description="damn taht's delicious")
-        if cooked_member.nick:
-            cooked_name = cooked_member.nick
-        else:
-            cooked_name = cooked_member.name
+        cooked_name = cooked_member.nick or cooked_member.name
+        ctx_name = ctx.author.nick or ctx.author.name
 
-        if interaction.user.nickname:
-            ctx_name = interaction.user.display_name
-        else:
-            ctx_name = interaction.user.name
+        cook_embed = discord.Embed(description="a")
         cook_embed.set_author(name=f'{ctx_name} is cooking for {cooked_name}')
-        image_url="https://c.tenor.com/IGaUQ3yRuNAAAAAd/tenor.gif"
+        image_url = "https://c.tenor.com/IGaUQ3yRuNAAAAAd/tenor.gif"
         cook_embed.set_image(url=image_url)
-        await interaction.response.send_message(embed=cook_embed)
+
+        await ctx.respond(embed=cook_embed)
     except Exception:
-        await interaction.response.send_message("I'm not your microwave bro 💀")
+        await ctx.respond("I'm not your microwave bro 💀")
 
+# ========== RUN THE BOT ==========
 
-bot.run('Token.')
+bot.run("token")
